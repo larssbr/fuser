@@ -109,6 +109,7 @@ impl<'a> RequestWithSender<'a> {
                     // Only allow operations that the kernel may issue without a uid set
                     ll::Operation::Init(_)
                     | ll::Operation::Destroy(_)
+                    | ll::Operation::Interrupt(_)
                     | ll::Operation::Read(_)
                     | ll::Operation::ReadDir(_)
                     | ll::Operation::BatchForget(_)
@@ -143,9 +144,8 @@ impl<'a> RequestWithSender<'a> {
                 return Err(Errno::EIO);
             }
 
-            ll::Operation::Interrupt(_) => {
-                // TODO: handle FUSE_INTERRUPT
-                return Err(Errno::ENOSYS);
+            ll::Operation::Interrupt(x) => {
+                filesystem.interrupt(self.request_header(), x.unique())?; // no reply
             }
 
             ll::Operation::Lookup(x) => {

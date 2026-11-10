@@ -656,6 +656,17 @@ pub trait Filesystem: Send + Sync + 'static {
     /// inodes will receive a forget message.
     fn forget(&self, _req: &Request, _ino: INodeNo, _nlookup: u64) {}
 
+    /// The kernel asks to interrupt request `unique`, as the process that made it got a
+    /// signal. Return `Ok(())` and answer that request with [`Errno::EINTR`] once it stops, or
+    /// as usual if it ends first. Return [`Errno::EAGAIN`] if the request has not been seen yet,
+    /// and the kernel sends the interrupt again. This may run on another thread while the
+    /// request is still being handled. The default returns [`Errno::ENOSYS`], which the kernel
+    /// takes as permanent: it sends no more interrupts on the connection, and a process then
+    /// waits for every answer whatever signal it gets, even `SIGKILL` once the request was read.
+    fn interrupt(&self, _req: &Request, _unique: RequestId) -> Result<(), Errno> {
+        Err(Errno::ENOSYS)
+    }
+
     /// Like [`forget`](Self::forget), but take multiple forget requests at once for performance. The default
     /// implementation will fallback to `forget`.
     fn batch_forget(&self, req: &Request, nodes: &[ForgetOne]) {

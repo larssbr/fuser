@@ -1,6 +1,13 @@
 # FUSE for Rust - Changelog
 
 ## Unreleased
+* Add `Filesystem::interrupt()`, which the kernel calls for `FUSE_INTERRUPT` when the process
+  behind a request gets a signal, so that a request that may wait for long, such as a `setlk()`
+  that sleeps, can be cut short with `EINTR`. For a lock the kernel then restarts the call or
+  ends it as the signal's handler asks, as on a local filesystem. Leaving it unimplemented
+  answers `ENOSYS`, as before, which the kernel takes as permanent: it sends no more interrupts
+  on that connection, and a process waiting on a request cannot be interrupted, nor killed once
+  the request was read
 * **Breaking:** `Request::uid()` and `Request::gid()` return `Option<u32>`. An idmapped mount
   has no caller ids to report, so there is not always a uid. A filesystem that does not request
   `InitFlags::FUSE_ALLOW_IDMAP` is always given ids and can unwrap
